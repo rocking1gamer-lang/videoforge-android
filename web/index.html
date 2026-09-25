@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VideoForge — Prompt to Explainer</title>
+<style>
+:root{--bg:#0b0d0f;--panel:#15191d;--panel2:#1c2228;--text:#f5f7fa;--muted:#aab2bd;--accent:#7c5cff;--line:#2c333b}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Arial,sans-serif}header{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px}header b{font-size:22px}header span{color:var(--muted);font-size:13px}.app{display:grid;grid-template-columns:360px 1fr;min-height:calc(100vh - 67px)}aside{border-right:1px solid var(--line);padding:20px;background:#0e1114}.label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px}textarea,input,select{width:100%;background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:12px;font:inherit}textarea{min-height:150px;resize:vertical}.row{display:flex;gap:8px}.btn{border:0;border-radius:10px;padding:11px 14px;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}.btn.secondary{background:var(--panel2);border:1px solid var(--line)}.btn:active{transform:translateY(1px)}main{padding:22px;display:grid;grid-template-rows:auto 1fr auto;gap:16px}.preview{background:#050607;border:1px solid var(--line);border-radius:14px;aspect-ratio:16/9;max-height:65vh;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}.scene{width:100%;height:100%;padding:7%;display:flex;flex-direction:column;justify-content:center;background:linear-gradient(135deg,#0b0d0f,#171c22)}.kicker{font-size:clamp(10px,1.2vw,16px);letter-spacing:4px;color:#aeb5bf;margin-bottom:22px}.title{font-size:clamp(26px,4vw,62px);font-weight:850;line-height:1.02;max-width:90%;animation:up .55s ease}.sub{font-size:clamp(13px,1.7vw,26px);color:#bac2cd;margin-top:20px;animation:up .7s ease}.cards{display:flex;gap:14px;flex-wrap:wrap;margin-top:35px}.card{padding:14px 18px;border:1px solid #3b444e;background:#171c22;border-radius:12px;font-weight:700}.timeline{display:flex;gap:8px;overflow:auto}.seg{min-width:150px;padding:12px;border:1px solid var(--line);background:var(--panel);border-radius:10px;cursor:pointer}.seg.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}.seg small{display:block;color:var(--muted);margin-top:5px}.status{color:var(--muted);font-size:13px}.note{font-size:12px;color:var(--muted);line-height:1.5;margin-top:10px}@keyframes up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}@media(max-width:850px){.app{grid-template-columns:1fr}aside{border-right:0;border-bottom:1px solid var(--line)}main{padding:12px}.preview{max-height:none}}
+</style>
+</head>
+<body>
+<header><b>VideoForge</b><span>Android-first prompt → explainer prototype</span></header>
+<div class="app">
+<aside>
+<div class="label">Prompt</div>
+<textarea id="prompt">Create a 2-minute beginner explainer about inflation. Explain what inflation is, give a ₹100 example, explain why prices rise, introduce CPI, and finish with a simple recap.</textarea>
+<div class="label">Visual style</div>
+<select id="style"><option>Modern Explainer</option><option>Clean Whiteboard</option><option>Editorial Mono</option><option>Sketch Infographic</option></select>
+<div class="label">Voice</div>
+<select id="voice"></select>
+<div class="row" style="margin-top:14px"><button class="btn" id="generate">Generate scenes</button><button class="btn secondary" id="speak">Speak</button></div>
+<div class="row" style="margin-top:8px"><button class="btn secondary" id="back">←</button><button class="btn secondary" id="play">▶ Preview</button><button class="btn secondary" id="next">→</button></div>
+<p class="note">This browser MVP generates scenes locally and uses the phone's built-in speech synthesis. It does not send your prompt to a server.</p>
+</aside>
+<main>
+<div class="status" id="status">Ready — generate a project.</div>
+<div class="preview" id="preview"><div class="scene"><div class="kicker">VIDEOFORGE • EXPLAINER</div><div class="title">Your animated explainer starts here.</div><div class="sub">Enter a prompt and tap Generate scenes.</div></div></div>
+<div class="timeline" id="timeline"></div>
+</main>
+</div>
+<script>
+const $=id=>document.getElementById(id);let scenes=[],idx=0,timer=null;
+function voices(){const vs=speechSynthesis.getVoices();$('voice').innerHTML=vs.map((v,i)=>`<option value="${i}">${v.name} — ${v.lang}</option>`).join('');}speechSynthesis.onvoiceschanged=voices;voices();
+function makeScenes(p){const topic=p.match(/about ([^.]+)/i)?.[1]||'this topic';return[
+{t:`What is ${topic}?`,s:'Start with the simplest possible definition.',c:['Big idea','Simple language']},
+{t:'A simple example',s:'Use an everyday example to make the concept concrete.',c:['Everyday example','Before → After']},
+{t:'Why does it happen?',s:'Break the main causes into two or three visual ideas.',c:['Cause 1','Cause 2','Cause 3']},
+{t:'How do we measure it?',s:'Introduce the key measure or indicator.',c:['Measure','Basket / data','Change over time']},
+{t:'Who is affected?',s:'Show the practical effects on ordinary people.',c:['Consumers','Savers','Businesses']},
+{t:'Quick recap',s:'Three short points the viewer should remember.',c:['Definition','Cause','Takeaway']}
+];}
+function render(){const s=scenes[idx];if(!s)return; $('preview').innerHTML=`<div class="scene"><div class="kicker">VIDEOFORGE • ${$('style').value.toUpperCase()}</div><div class="title">${s.t}</div><div class="sub">${s.s}</div><div class="cards">${s.c.map(x=>`<div class="card">${x}</div>`).join('')}</div></div>`;[...$('timeline').children].forEach((e,i)=>e.classList.toggle('active',i===idx));$('status').textContent=`Scene ${idx+1} of ${scenes.length}`;}
+function timeline(){ $('timeline').innerHTML=scenes.map((s,i)=>`<div class="seg ${i===idx?'active':''}" data-i="${i}"><b>${i+1}. ${s.t}</b><small>~10 sec</small></div>`).join('');[...$('timeline').children].forEach(e=>e.onclick=()=>{idx=+e.dataset.i;render()});}
+$('generate').onclick=()=>{scenes=makeScenes($('prompt').value);idx=0;timeline();render();$('status').textContent=`Generated ${scenes.length} scenes locally.`};
+$('next').onclick=()=>{if(!scenes.length)return;idx=(idx+1)%scenes.length;render()};$('back').onclick=()=>{if(!scenes.length)return;idx=(idx-1+scenes.length)%scenes.length;render()};
+$('speak').onclick=()=>{if(!scenes.length)scenes=makeScenes($('prompt').value);const text=scenes.map(s=>s.t+'. '+s.s).join(' ');speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);const vs=speechSynthesis.getVoices();u.voice=vs[+$('voice').value]||null;u.rate=.95;speechSynthesis.speak(u);$('status').textContent='Speaking project narration…'};
+$('play').onclick=()=>{if(!scenes.length){scenes=makeScenes($('prompt').value);timeline()}clearInterval(timer);let n=idx;timer=setInterval(()=>{idx=n++;render();if(n>=scenes.length){clearInterval(timer);$('status').textContent='Preview complete.'}},1800);render()};
+</script>
+</body></html>
