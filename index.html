@@ -1,12 +1,72 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VideoForge</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b0d12">
+  <meta name="description" content="VideoForge — Android-first AI explainer video creator prototype.">
+  <title>VideoForge — Explainer Studio</title>
+  <style>
+    :root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#f4f6fb;background:#090b10;color-scheme:dark}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 15% 0,#24204b 0,transparent 35%),#090b10}
+    header{height:64px;border-bottom:1px solid #252936;display:flex;align-items:center;padding:0 20px;position:sticky;top:0;background:#0b0d12e8;backdrop-filter:blur(14px);z-index:5}
+    .brand{font-size:20px;font-weight:800;letter-spacing:-.5px}.tag{margin-left:12px;color:#9299aa;font-size:13px}
+    main{width:min(1100px,calc(100% - 28px));margin:28px auto 60px;display:grid;grid-template-columns:1.05fr .95fr;gap:18px}
+    .card{border:1px solid #282d3a;background:#11141b;border-radius:18px;box-shadow:0 20px 60px #0005;overflow:hidden}.pad{padding:20px}
+    label{display:block;font-size:12px;font-weight:800;letter-spacing:.08em;color:#aeb5c5;margin:0 0 9px;text-transform:uppercase}
+    textarea,select{width:100%;border:1px solid #303646;background:#0b0e14;color:#f5f7fb;border-radius:12px;padding:14px;font:inherit;outline:none}textarea{min-height:150px;resize:vertical;line-height:1.5}select{height:48px}
+    textarea:focus,select:focus{border-color:#8b6cff;box-shadow:0 0 0 3px #8b6cff22}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}.actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+    button{border:1px solid #353b4b;background:#1a1f29;color:#f4f6fb;border-radius:11px;padding:12px 16px;font-weight:750;cursor:pointer}button:hover{filter:brightness(1.15)}button.primary{border:0;background:linear-gradient(135deg,#8c62ff,#5d7cff)}
+    .status{font-size:13px;color:#969dad;margin-top:12px;min-height:18px}.preview{min-height:100%;display:flex;flex-direction:column}.screen{aspect-ratio:16/9;background:#050608;border-radius:13px;border:1px solid #2b3040;display:grid;place-items:center;padding:25px;text-align:center;overflow:hidden}
+    .screen h2{font-size:clamp(22px,4vw,38px);margin:0 0 10px}.screen p{color:#adb3c2;max-width:600px;margin:0;font-size:clamp(13px,1.8vw,17px)}
+    .scene-list{display:grid;gap:8px;margin-top:14px}.scene{display:flex;gap:10px;align-items:center;padding:10px;border:1px solid #292e3b;border-radius:10px;background:#0d1016}.num{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:#242a38;color:#bfc6d5;font-size:12px;font-weight:800}.scene b{font-size:13px}.scene span{display:block;color:#808898;font-size:12px;margin-top:2px}
+    .empty{color:#747b8b;font-size:13px}.footer{width:min(1100px,calc(100% - 28px));margin:-35px auto 35px;color:#686f7d;font-size:12px;text-align:center}
+    @media(max-width:800px){main{grid-template-columns:1fr}.preview{min-height:0}.tag{display:none}}
+  </style>
 </head>
 <body>
-  <h1>VideoForge</h1>
-  <p>Video creation platform is coming online.</p>
+<header><div class="brand">VideoForge</div><div class="tag">Android-first explainer studio</div></header>
+<main>
+  <section class="card pad">
+    <label for="prompt">Prompt</label>
+    <textarea id="prompt" placeholder="Create a 2-minute beginner explainer about inflation. Explain what inflation is, give a ₹100 example, explain why prices rise, introduce CPI, and finish with a simple recap."></textarea>
+    <div class="row">
+      <div><label for="style">Visual style</label><select id="style"><option>Modern Explainer</option><option>Minimal Infographic</option><option>Editorial Motion</option><option>Claymorphism</option><option>Hand-drawn Sketch</option></select></div>
+      <div><label for="voice">Voice</label><select id="voice"><option>Device default</option><option>English — India</option><option>English — US</option><option>Hindi — India</option></select></div>
+    </div>
+    <div class="actions"><button class="primary" id="generate">Generate scenes</button><button id="speak">Speak</button><button id="clear">Clear</button></div>
+    <div class="status" id="status">Ready — generate a project.</div>
+  </section>
+  <section class="card pad preview">
+    <label>Preview</label>
+    <div class="screen" id="screen"><div><h2>VideoForge</h2><p>Your generated explainer will appear here.</p></div></div>
+    <div class="scene-list" id="scenes"><div class="empty">No scenes yet.</div></div>
+  </section>
+</main>
+<div class="footer">Local prototype • Prompts stay in your browser • Built for the VideoForge Android project</div>
+<script>
+const $=id=>document.getElementById(id);let scenes=[];let timer;
+function makeScenes(text){
+  const t=text.trim()||'Create a beginner explainer about inflation.';
+  const topic=t.replace(/^create\s+(a\s+)?/i,'').replace(/\.$/,'');
+  return [
+    ['Hook',`A clear opening question about ${topic}.`],
+    ['Core idea',`Introduce the central concept in simple language.`],
+    ['Example',`Use a concrete everyday example to make the idea intuitive.`],
+    ['Why it happens',`Break the main causes into two or three visual points.`],
+    ['Measure',`Show the key measure, number, or comparison with an animated graphic.`],
+    ['Recap',`Finish with three memorable takeaways.`]
+  ];
+}
+function render(){
+  $('scenes').innerHTML=scenes.map((s,i)=>`<div class="scene"><div class="num">${i+1}</div><div><b>${s[0]}</b><span>${s[1]}</span></div></div>`).join('');
+  $('screen').innerHTML=`<div><h2>${scenes[0]?.[0]||'VideoForge'}</h2><p>${scenes[0]?.[1]||'Your generated explainer will appear here.'}</p></div>`;
+}
+$('generate').onclick=()=>{clearTimeout(timer);scenes=makeScenes($('prompt').value);render();localStorage.setItem('vfPrompt',$('prompt').value);$('status').textContent=`Generated ${scenes.length} scenes locally using ${$('style').value}.`;};
+$('clear').onclick=()=>{scenes=[];$('prompt').value='';render();$('status').textContent='Ready — generate a project.';};
+$('speak').onclick=()=>{if(!('speechSynthesis' in window)){ $('status').textContent='Speech synthesis is not available in this browser.';return;} speechSynthesis.cancel();const text=($('prompt').value||'VideoForge is ready.').slice(0,2500);const u=new SpeechSynthesisUtterance(text);speechSynthesis.speak(u);$('status').textContent='Speaking with your device voice.';};
+$('prompt').value=localStorage.getItem('vfPrompt')||'';
+</script>
 </body>
 </html>
