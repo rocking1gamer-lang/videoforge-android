@@ -19,6 +19,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      # The production web entrypoint lives at the repository root.
+      # Copy it into the Pages artifact directory before deployment.
+      - name: Prepare web artifact
+        run: cp index.html web/index.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: './web'
